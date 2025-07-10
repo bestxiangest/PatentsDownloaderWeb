@@ -210,6 +210,16 @@ async function checkDownloadStatus() {
                     // 刷新文件列表
                     loadFiles();
                 }
+                
+                // 隐藏验证码界面
+                hideCaptchaModal();
+            } else if (result.status === 'need_captcha') {
+                // 显示验证码界面
+                showCaptchaModal(currentTaskId, result.captcha_image);
+                // 停止状态检查，等待用户输入验证码
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+                return; // 立即返回，不继续执行
             }
         }
     } catch (error) {
@@ -353,4 +363,116 @@ function showAlert(message, type = 'info') {
             alertDiv.remove();
         }
     }, 3000);
+}
+
+// 显示验证码界面
+function showCaptchaModal(taskId, captchaImage) {
+    // 检查是否已经有验证码模态框显示
+    const existingModal = document.getElementById('captchaModal');
+    if (existingModal) {
+        // 如果已存在，只更新验证码图片
+        const captchaImg = document.getElementById('captchaImage');
+        if (captchaImg) {
+            captchaImg.src = `data:image/png;base64,${captchaImage}`;
+        }
+        return;
+    }
+    
+    // 创建验证码模态框
+    const modalHtml = `
+        <div class="modal fade" id="captchaModal" tabindex="-1" aria-labelledby="captchaModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="captchaModalLabel">请输入验证码</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <img id="captchaImage" src="data:image/png;base64,${captchaImage}" alt="验证码" class="img-fluid" style="max-width: 200px;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="captchaInput" class="form-label">验证码</label>
+                            <input type="text" class="form-control" id="captchaInput" placeholder="请输入验证码">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="submitCaptcha('${taskId}')">提交</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 添加新的模态框
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('captchaModal'));
+    modal.show();
+    
+    // 聚焦到输入框
+    setTimeout(() => {
+        document.getElementById('captchaInput').focus();
+    }, 500);
+}
+
+// 隐藏验证码界面
+function hideCaptchaModal() {
+    const modal = document.getElementById('captchaModal');
+    if (modal) {
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) {
+            bsModal.hide();
+        }
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+}
+
+// 提交验证码
+async function submitCaptcha(taskId) {
+    const captchaValue = document.getElementById('captchaInput').value.trim();
+    
+    if (!captchaValue) {
+        showAlert('请输入验证码', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/submit_captcha', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                 task_id: taskId,
+                 captcha_code: captchaValue
+             })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+             showAlert('验证码提交成功，继续下载...', 'success');
+             hideCaptchaModal();
+             // 重新启动状态检查
+             startStatusCheck();
+        } else {
+            showAlert(result.message || '验证码提交失败', 'danger');
+            // 刷新验证码图片
+            if (result.captcha_image) {
+                document.getElementById('captchaImage').src = `data:image/png;base64,${result.captcha_image}`;
+            }
+            // 清空输入框
+            document.getElementById('captchaInput').value = '';
+            document.getElementById('captchaInput').focus();
+        }
+        
+    } catch (error) {
+        console.error('提交验证码错误:', error);
+        showAlert('提交验证码失败，请检查网络连接', 'danger');
+    }
 }

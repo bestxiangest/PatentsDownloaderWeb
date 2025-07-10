@@ -116,21 +116,16 @@ def check_local_patent(patent_no):
     :return: 文件路径或None
     """
     if not os.path.exists(DIR_PATH):
-        print(f"警告: 目录 {DIR_PATH} 不存在")
         return None
 
-    print(f"正在检查目录: {DIR_PATH}")
     patent_no = re.escape(patent_no)  # 转义特殊字符
     pattern = re.compile(rf'.*{patent_no}.*\.pdf', re.IGNORECASE)
 
     for filename in os.listdir(DIR_PATH):
-        print(f"检查文件: {filename}")
         if pattern.match(filename):
             full_path = os.path.join(DIR_PATH, filename)
-            print(f"找到匹配文件: {full_path}")
             return full_path
 
-    print(f"未找到包含专利号 {patent_no} 的文件")
     return None
 
 def print_menu(title, options):
@@ -148,23 +143,6 @@ def print_menu(title, options):
     print("=" * 40)
 
 
-def check_local_patent(patent_no):
-    """
-    检查本地是否存在包含指定专利号的文件。
-    :param patent_no: 专利号
-    :return: 文件路径或None
-    """
-    if not os.path.exists(DIR_PATH):
-        return None
-
-    patent_no = re.escape(patent_no)  # 转义特殊字符
-    pattern = re.compile(rf'.*{patent_no}.*\.pdf', re.IGNORECASE)
-
-    for filename in os.listdir(DIR_PATH):
-        if pattern.match(filename):
-            return os.path.join(DIR_PATH, filename)
-
-    return None
 # 引用此配置文件的文件：
 # - main.py: 用于主程序逻辑和用户交互
 # - patentdown.py: 用于专利PDF下载功能

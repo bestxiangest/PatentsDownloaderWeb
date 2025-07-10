@@ -15,7 +15,7 @@ def decode_protobuf_message(data):
     data = data[5:]
     
     # 查找所有专利号和标题
-    patent_matches = re.findall(b'\n\x10(CN\d+\.\d+)\x12(.{1,200}?)\x1a', data)
+    patent_matches = re.findall(rb'\n\x10(CN\d+\.\d+)\x12(.{1,200}?)\x1a', data)
     
     results = []
     
