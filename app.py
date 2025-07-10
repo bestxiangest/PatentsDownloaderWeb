@@ -4,6 +4,9 @@ import sys
 import threading
 import time
 from werkzeug.utils import secure_filename
+import qrcode
+import io
+import base64
 
 # 添加src目录到Python路径
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -362,6 +365,46 @@ def download_pdf_file(filename):
             return jsonify({'success': False, 'message': '文件不存在'}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': f'下载失败: {str(e)}'}), 500
+
+@app.route('/api/generate_qr/<filename>')
+def generate_qr_code(filename):
+    """生成文件下载的二维码"""
+    try:
+        file_path = os.path.join(DIR_PATH, filename)
+        if not os.path.exists(file_path) or not filename.endswith('.pdf'):
+            return jsonify({'success': False, 'message': '文件不存在'}), 404
+        
+        # 生成下载链接
+        download_url = request.url_root + f'download/{filename}'
+        
+        # 生成二维码
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(download_url)
+        qr.make(fit=True)
+        
+        # 创建二维码图片
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        # 将图片转换为base64
+        img_buffer = io.BytesIO()
+        qr_img.save(img_buffer, format='PNG')
+        img_buffer.seek(0)
+        qr_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+        
+        return jsonify({
+            'success': True,
+            'qr_code': qr_base64,
+            'download_url': download_url,
+            'filename': filename
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'生成二维码失败: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=9898)

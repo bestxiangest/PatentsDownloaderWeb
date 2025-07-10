@@ -4,6 +4,101 @@
 let currentTaskId = null;
 let statusCheckInterval = null;
 
+// 生成二维码并显示弹窗
+async function generateQRCode(filename) {
+    try {
+        const response = await fetch(`/api/generate_qr/${filename}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            showQRCodeModal(result.qr_code, result.download_url, result.filename);
+        } else {
+            showAlert('生成二维码失败: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('生成二维码错误:', error);
+        showAlert('生成二维码失败，请重试', 'danger');
+    }
+}
+
+// 显示二维码弹窗
+function showQRCodeModal(qrCodeBase64, downloadUrl, filename) {
+    const modalHtml = `
+        <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="qrCodeModalLabel">
+                            <i class="icon-download"></i> 扫码下载专利文件
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <h6 class="text-muted">使用手机扫描下方二维码下载文件</h6>
+                            <p class="small text-secondary">${filename}</p>
+                        </div>
+                        <div class="qr-code-container mb-3">
+                            <img src="data:image/png;base64,${qrCodeBase64}" alt="下载二维码" class="img-fluid" style="max-width: 250px;">
+                        </div>
+                        <div class="alert alert-info small">
+                            <i class="icon-search"></i> 请使用手机相机或二维码扫描应用扫描上方二维码
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">或复制链接: </small>
+                            <div class="input-group input-group-sm mt-2">
+                                <input type="text" class="form-control" value="${downloadUrl}" readonly id="downloadUrlInput">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyDownloadUrl()">
+                                    <i class="icon-download"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                        <a href="${downloadUrl}" class="btn btn-primary" download="${filename}">
+                            <i class="icon-download"></i> 直接下载
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 移除已存在的模态框
+    const existingModal = document.getElementById('qrCodeModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // 添加新的模态框到页面
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+    modal.show();
+    
+    // 模态框关闭后移除DOM元素
+    document.getElementById('qrCodeModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+// 复制下载链接
+function copyDownloadUrl() {
+    const input = document.getElementById('downloadUrlInput');
+    input.select();
+    input.setSelectionRange(0, 99999); // 移动设备兼容
+    
+    try {
+        document.execCommand('copy');
+        showAlert('链接已复制到剪贴板', 'success');
+    } catch (err) {
+        console.error('复制失败:', err);
+        showAlert('复制失败，请手动复制链接', 'warning');
+    }
+}
+
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
@@ -207,6 +302,8 @@ async function checkDownloadStatus() {
                 statusCheckInterval = null;
                 
                 if (result.status === 'completed') {
+                    // 生成二维码并显示弹窗
+                    generateQRCode(result.filename);
                     // 刷新文件列表
                     loadFiles();
                 }
