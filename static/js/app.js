@@ -155,7 +155,7 @@ function displaySearchResults(patents, keywords, page) {
                         <small class="text-muted">申请人: ${patent.申请人 || '未知'}</small>
                     </div>
                     <button class="btn btn-sm btn-outline-primary" onclick="downloadFromSearch('${patent.专利号}')">
-                        <i class="fas fa-download"></i> 下载
+                        <i class="icon-download"></i> 下载
                     </button>
                 </div>
             </div>
@@ -237,16 +237,16 @@ function showDownloadStatus(status, message, filename = '') {
     
     switch (status) {
         case 'pending':
-            icon = '<i class="fas fa-clock"></i>';
+            icon = '<i class="icon-clock"></i>';
             break;
         case 'downloading':
             icon = '<div class="loading"></div>';
             break;
         case 'completed':
-            icon = '<i class="fas fa-check-circle"></i>';
+            icon = '<i class="icon-check-circle"></i>';
             break;
         case 'failed':
-            icon = '<i class="fas fa-times-circle"></i>';
+            icon = '<i class="icon-times-circle"></i>';
             break;
     }
     
@@ -275,7 +275,7 @@ function showSearchLoading(loading) {
         button.innerHTML = '<div class="loading"></div> 搜索中...';
         button.disabled = true;
     } else {
-        button.innerHTML = '<i class="fas fa-search"></i> 搜索专利';
+        button.innerHTML = '<i class="icon-search"></i> 搜索专利';
         button.disabled = false;
     }
 }
@@ -304,7 +304,7 @@ async function loadFiles() {
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="flex-grow-1">
                                 <h6 class="mb-1">
-                                    <i class="fas fa-file-pdf text-danger"></i> ${file.filename}
+                                    <i class="icon-file-pdf text-danger"></i> ${file.filename}
                                 </h6>
                                 <small class="text-muted">
                                     大小: ${fileSize} | 修改时间: ${modifiedTime}
@@ -313,7 +313,7 @@ async function loadFiles() {
                             <a href="/download/${encodeURIComponent(file.filename)}" 
                                class="btn btn-sm btn-outline-primary" 
                                download="${file.filename}">
-                                <i class="fas fa-download"></i> 下载
+                                <i class="icon-download"></i> 下载
                             </a>
                         </div>
                     </div>
